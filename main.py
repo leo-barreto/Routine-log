@@ -9,11 +9,13 @@ from matplotlib import pyplot as plt
 
 TD = datetime.today()
 CODE = {'S': 'Sono', 'P': 'Projeto', 'G': 'Game'}
+LOG = 'log.txt'
+CAT = 'categories.txt'
 
 
-def ReadLog(txt = 'log.txt'):
-    log = np.genfromtxt(txt, dtype = 'str')        
-    return log    
+def ReadLog(txt = LOG):
+    log = np.genfromtxt(txt, dtype = 'str', delimiter = ';')
+    return log
 
 
 def AddEntry(arg, txt = 'log.txt'):
@@ -38,10 +40,16 @@ def AddEntry(arg, txt = 'log.txt'):
     f.close()
 
 
-#def Categories(cat):
+#def Categories(txt = CAT):
+#     = np.genfromtxt(txt, dtype = 'str')
     
 def AnalysisHours(log, start, end, PLOT = True):
-    CAT = {'S': 0, 'P': 0, 'G': 0}
+    catlog = ReadLog(CAT)
+    N = range(len(catlog))
+    ct, cl, dc = catlog[:, 0], catlog[:, 1], catlog[:, 2]
+        
+    hours = np.zeros(len(catlog))
+    
     for entry in log:
         t1 = entry[0] + entry[1]
         t2 = entry[0] + entry[2]
@@ -51,23 +59,34 @@ def AnalysisHours(log, start, end, PLOT = True):
         T2 = datetime.strptime(t2, '%Y-%m-%d%H%M')
         
         if start <= T1 and T2 <= end:
-            for i in CAT.keys():
-                if i == cat:
+            for i in N:
+                if cat == ct[i]:
                     diff = (T2 - T1).total_seconds() / 3600
                     if diff < 0:
                         diff += 24
-                    CAT[i] += diff
+                    hours[i] += diff
     
     dt = (end - start).total_seconds() / 3600
-    sor = sorted(CAT.values())
-    sor.reverse()
-    for k, v in sor:
-        if v == 0:
-            break
-        relv = 100 * v / dt
-        print('{0}: {1}h ({2:.0f}%)'.format(CODE[k], v, relv))
+    h2, cl2, dc2 = [], [], []    # Only non-0 hours categories
         
+    for i in N:
+        cl[i] = '#' + cl[i] 
+        v = hours[i]
+        if v != 0:
+            h2.append(v)
+            cl2.append(cl[i])
+            dc2.append(dc[i])
+            relv = 100 * v / dt
+            print('{0}: {1}h ({2:.1f}%)'.format(dc[i], v, relv))
+            
         
+    if PLOT:
+        explode = np.zeros(len(h2))
+        plt.pie(h2, explode, dc2, cl2)
+        plt.suptitle('Hours Proportion', fontsize = 16)
+        plt.title(start.strftime('%d/%m/%y') + ' - ' + end.strftime('%d/%m/%y'))
+        plt.axis('equal')
+        plt.show()
 
     
     
